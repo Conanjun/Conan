@@ -1,0 +1,95 @@
+/*
+	function: traverse a directory and delete all the files in it
+	author: Conan
+	date: 2014/11/25
+*/
+
+#include<stdio.h>
+#include<stdlib.h>
+#include<direct.h>
+#include<string.h>
+void directory_traverse();
+int main()
+{
+	char filename[_MAX_PATH];
+
+	//printf("%d",_MAX_PATH);
+	printf("Please input the directory(such as 'D:\\test')\n");
+	gets(filename);
+	if(0==_chdir(filename))
+	{
+		printf("enter the directory successfully\n");
+		directory_traverse();
+	}
+	
+	else
+	{
+		printf("enter the directory failed,please check the path that you entered\n");
+		exit(1); 
+	}
+	system("pause");
+	return 0;
+}
+
+void directory_traverse()
+{
+	struct _finddata_t file;
+	long handle;
+	char path[_MAX_PATH];
+	char* deletefile;
+	handle=_findfirst("*",&file);
+	if(handle==-1)//if handle=-1,then the directory is empty
+		return;
+	else
+	{
+		if(file.attrib & _A_SUBDIR) //the first file is a directory
+		{
+			if(file.name[0]!='.') //not current file and previous,then enter the file
+			{
+				chdir(file.name);
+				getcwd(path,_MAX_PATH);
+				puts(path);
+				directory_traverse();//recursion traversion
+				_chdir("..");//return to the previous directory	
+			}
+			
+		} 
+		else //the first file is a real file
+		{
+			_getcwd(path,_MAX_PATH);
+			strcat(path,"\\");
+			strcat(path,file.name);
+			printf("%-20s %10ld",path,file.size);
+		}
+		while(!(_findnext(handle,&file))) //search for the current directory 's next file or directory
+		{
+			if(file.attrib & _A_SUBDIR)
+			{
+				if(file.name[0]!='.')
+				{
+					_chdir(file.name);//enter the target dir
+					_getcwd(path,_MAX_PATH);
+					puts(path);
+					directory_traverse();
+					_chdir("..");
+					if(rmdir(path)==0)//if( remove(path) == 0 )
+    					printf("Removed %s.\n", path);
+    				else
+	   					 perror("remove");
+
+					//perror( ) 用来将上一个函数发生错误的原因输出到标准设备(stderr)。
+				}
+			}
+			else
+			{
+				_getcwd(path,_MAX_PATH);
+				strcat(path,"\\");
+				deletefile=strcat(path,file.name);
+				printf("%-20s %10ld\n",path,file.size);
+				remove(deletefile); //delete file
+			}
+		}	
+		_findclose(handle);
+	}	
+		
+}	
